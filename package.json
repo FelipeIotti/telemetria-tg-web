@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
+    "@netlify/vite-plugin-react-router": "^1.0.1",
     "@types/mapbox__mapbox-gl-draw": "^1.4.9",
     "@types/node": "^24.3.0",
     "@types/react": "^19.1.10",
