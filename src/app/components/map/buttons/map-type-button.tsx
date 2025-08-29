@@ -23,7 +23,7 @@ export function MapTypeButton({ mapRef }: MapTypeButtonProps) {
   }
 
   return (
-    <div className="absolute top-2 right-2 bg-white rounded p-[2px] shadow-lg ">
+    <div className=" bg-white rounded p-[2px] shadow ">
       <div className="flex gap-2 rounded">
         <div
           className={`px-2 py-1 cursor-pointer ${
