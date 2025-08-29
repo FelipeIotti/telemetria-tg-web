@@ -1,4 +1,4 @@
-import { Map } from "@/components/map";
+import { Map } from "@/app/components/map";
 
 export function MapPage() {
   return (

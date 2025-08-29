@@ -1,4 +1,4 @@
-import { ChartData } from "@/components/chart-data";
+import { ChartData } from "@/app/components/chart-data";
 
 export function Charts() {
   return (

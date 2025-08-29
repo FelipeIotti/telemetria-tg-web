@@ -1,5 +1,5 @@
-import { CardData } from "@/components/card-data";
-import { TireTypeSelector } from "@/components/tire-type-selector";
+import { CardData } from "@/app/components/card-data";
+import { TireTypeSelector } from "@/app/components/tire-type-selector";
 import type { TiresTypeDTO } from "@/dtos/tires-type-DTO";
 import { useState } from "react";
 
