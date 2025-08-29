@@ -1,4 +1,3 @@
-import type { GpsDTO } from "@/dtos/gps-DTO";
 import type { LocationCoordsDTO } from "@/dtos/location-coords-DTO";
 import { MapStyles } from "@/shared/constants/map-styles";
 import mapboxgl from "mapbox-gl";
@@ -11,37 +10,38 @@ import { ZoomButton } from "./buttons/zoom-buttons";
 import "./styles.css";
 
 // Função para calcular distância haversine em km
-function haversineDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-) {
-  const R = 6371; // raio da Terra em km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+// function haversineDistance(
+//   lat1: number,
+//   lon1: number,
+//   lat2: number,
+//   lon2: number
+// ) {
+//   const R = 6371; // raio da Terra em km
+//   const dLat = ((lat2 - lat1) * Math.PI) / 180;
+//   const dLon = ((lon2 - lon1) * Math.PI) / 180;
+//   const a =
+//     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+//     Math.cos((lat1 * Math.PI) / 180) *
+//       Math.cos((lat2 * Math.PI) / 180) *
+//       Math.sin(dLon / 2) *
+//       Math.sin(dLon / 2);
+//   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+//   return R * c;
+// }
 
-interface MapProps {
-  data: GpsDTO[];
-}
+// interface MapProps {
+//   data?: GpsDTO[];
+// }
 
-export function Map({ data }: MapProps) {
+export function Map() {
+  //  { data }: MapProps
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
   const [isNorth, setIsNorth] = useState(true);
   const [currentLocation, setCurrentLocation] =
     useState<LocationCoordsDTO | null>(null);
-  const [laps, setLaps] = useState(0);
+  //const [laps, setLaps] = useState(0);
 
   // inicializa o mapa
   const initializeMap = useCallback(() => {
@@ -67,83 +67,83 @@ export function Map({ data }: MapProps) {
   }
 
   // quando "data" atualizar, redesenha a rota
-  useEffect(() => {
-    if (!mapRef.current || data.length < 2) return;
+  // useEffect(() => {
+  //   if (!mapRef.current || data.length < 2) return;
 
-    const map = mapRef.current;
+  //   const map = mapRef.current;
 
-    // linha da rota
-    const routeGeoJSON = {
-      type: "Feature",
-      geometry: {
-        type: "LineString",
-        coordinates: data.map((p) => [p.longitude, p.latitude]),
-      },
-      properties: {},
-    };
+  //   // linha da rota
+  //   const routeGeoJSON = {
+  //     type: "Feature",
+  //     geometry: {
+  //       type: "LineString",
+  //       coordinates: data.map((p) => [p.longitude, p.latitude]),
+  //     },
+  //     properties: {},
+  //   };
 
-    if (map.getSource("route")) {
-      (map.getSource("route") as mapboxgl.GeoJSONSource).setData(routeGeoJSON);
-    } else {
-      map.addSource("route", { type: "geojson", data: routeGeoJSON });
-      map.addLayer({
-        id: "route",
-        type: "line",
-        source: "route",
-        layout: { "line-join": "round", "line-cap": "round" },
-        paint: { "line-color": "#ff0000", "line-width": 4 },
-      });
-    }
-    // marcador da posição atual
-    // marcador da posição atual
-    const lastPoint = data[data.length - 1];
-    setCurrentLocation(lastPoint);
+  //   if (map.getSource("route")) {
+  //     (map.getSource("route") as mapboxgl.GeoJSONSource).setData(routeGeoJSON);
+  //   } else {
+  //     map.addSource("route", { type: "geojson", data: routeGeoJSON });
+  //     map.addLayer({
+  //       id: "route",
+  //       type: "line",
+  //       source: "route",
+  //       layout: { "line-join": "round", "line-cap": "round" },
+  //       paint: { "line-color": "#ff0000", "line-width": 4 },
+  //     });
+  //   }
+  //   // marcador da posição atual
+  //   // marcador da posição atual
+  //   const lastPoint = data[data.length - 1];
+  //   setCurrentLocation(lastPoint);
 
-    const carGeoJSON = {
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [lastPoint.longitude, lastPoint.latitude],
-      },
-      properties: {}, // ✅ obrigatório
-    };
+  //   const carGeoJSON = {
+  //     type: "Feature",
+  //     geometry: {
+  //       type: "Point",
+  //       coordinates: [lastPoint.longitude, lastPoint.latitude],
+  //     },
+  //     properties: {}, // ✅ obrigatório
+  //   };
 
-    if (map.getSource("car")) {
-      (map.getSource("car") as mapboxgl.GeoJSONSource).setData(carGeoJSON);
-    } else {
-      map.addSource("car", { type: "geojson", data: carGeoJSON });
-      map.addLayer({
-        id: "car",
-        type: "circle",
-        source: "car",
-        paint: {
-          "circle-radius": 6,
-          "circle-color": "#007bff",
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#fff",
-        },
-      });
-    }
+  //   if (map.getSource("car")) {
+  //     (map.getSource("car") as mapboxgl.GeoJSONSource).setData(carGeoJSON);
+  //   } else {
+  //     map.addSource("car", { type: "geojson", data: carGeoJSON });
+  //     map.addLayer({
+  //       id: "car",
+  //       type: "circle",
+  //       source: "car",
+  //       paint: {
+  //         "circle-radius": 6,
+  //         "circle-color": "#007bff",
+  //         "circle-stroke-width": 2,
+  //         "circle-stroke-color": "#fff",
+  //       },
+  //     });
+  //   }
 
-    // lógica de voltas (finish line = primeiro ponto)
-    if (data.length > 2) {
-      const first = data[0];
-      const dist = haversineDistance(
-        first.latitude,
-        first.longitude,
-        lastPoint.latitude,
-        lastPoint.longitude
-      );
+  //   // lógica de voltas (finish line = primeiro ponto)
+  //   if (data.length > 2) {
+  //     const first = data[0];
+  //     const dist = haversineDistance(
+  //       first.latitude,
+  //       first.longitude,
+  //       lastPoint.latitude,
+  //       lastPoint.longitude
+  //     );
 
-      const timeDiff =
-        new Date(lastPoint.created_at).getTime() -
-        new Date(first.created_at).getTime();
+  //     const timeDiff =
+  //       new Date(lastPoint.created_at).getTime() -
+  //       new Date(first.created_at).getTime();
 
-      if (dist <= 0.03 && timeDiff >= 60000) {
-        setLaps((prev) => prev + 1);
-      }
-    }
-  }, [data]);
+  //     if (dist <= 0.03 && timeDiff >= 60000) {
+  //       setLaps((prev) => prev + 1);
+  //     }
+  //   }
+  // }, [data]);
 
   useEffect(() => {
     initializeMap();
@@ -161,7 +161,7 @@ export function Map({ data }: MapProps) {
 
       {/* UI */}
       <div className="absolute top-2 left-2 bg-white px-3 py-2 rounded shadow">
-        <p className="font-bold">Voltas: {laps}</p>
+        <p className="font-bold">Voltas: {0}</p>
       </div>
 
       <MapTypeButton mapRef={mapRef} />
