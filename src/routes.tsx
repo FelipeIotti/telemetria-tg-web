@@ -1,9 +1,9 @@
 import { createBrowserRouter } from "react-router";
-import { AppLayout } from "./pages/_layouts/app";
-import { BaseData } from "./pages/base-data";
-import { Charts } from "./pages/charts";
-import { MapPage } from "./pages/map";
-import { Tires } from "./pages/tires";
+import { AppLayout } from "./app/pages/_layouts/app";
+import { BaseData } from "./app/pages/base-data";
+import { Charts } from "./app/pages/charts";
+import { MapPage } from "./app/pages/map";
+import { Tires } from "./app/pages/tires";
 
 export const router = createBrowserRouter([
   {

@@ -1,5 +1,5 @@
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/app/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import type { TiresTypeDTO } from "@/dtos/tires-type-DTO";
 import type { Dispatch, SetStateAction } from "react";
 
