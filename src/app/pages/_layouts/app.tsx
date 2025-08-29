@@ -10,7 +10,7 @@ export function AppLayout() {
         <div className="flex relative border-b-1 border-gray-300 pb-1">
           <SidebarTrigger className="z-10" />
           <div className="absolute w-full flex items-center justify-center">
-            <img src="/public/logo.png" alt="logo" style={{ width: 50 }} />
+            <img src="/logo.png" alt="logo" style={{ width: 50 }} />
           </div>
         </div>
         <div className="mt-2 flex w-full h-full">
