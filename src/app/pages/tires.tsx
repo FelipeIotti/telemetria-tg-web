@@ -16,6 +16,7 @@ export function Tires() {
       try {
         setIsLoading(true);
         const { data } = await api.get("/tires");
+      
 
         setTiresData(data[data.length - 1]);
       } catch (error) {
@@ -26,11 +27,11 @@ export function Tires() {
     }
     handleLoadData();
 
-    // const interval = setInterval(() => {
-    //   handleLoadData();
-    // }, 1000);
+    const interval = setInterval(() => {
+      handleLoadData();
+    }, 1000);
 
-    // return () => clearInterval(interval);
+    return () => clearInterval(interval);
   }, []);
 
   return (

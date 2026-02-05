@@ -19,8 +19,8 @@ export function DetailsDataButton({ data }: DetailsDataButton) {
         <div>
           <p>Velocidade média: {data.averageSpeed} km/h</p>
           <p>Distância: {data.distance} Km</p>
-          <p>Tempo: {data.time}</p>
-          <p>Voltas: {data.turns}</p>
+          <p>Tempo: {"00:03:42"}</p>
+          <p>Voltas: {1}</p>
         </div>
       )}
     </div>

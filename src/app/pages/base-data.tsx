@@ -13,7 +13,8 @@ export function BaseData() {
       try {
         setIsLoading(true);
         const { data } = await api.get("/base-data");
-        setBaseData(data[data.length - 1]);
+     
+        setBaseData(data[0]);
       } catch (error) {
         console.log(error);
       } finally {
@@ -22,11 +23,11 @@ export function BaseData() {
     }
     handleLoadData();
 
-    // const interval = setInterval(() => {
-    //   handleLoadData();
-    // }, 1000);
+    const interval = setInterval(() => {
+      handleLoadData();
+    }, 1000);
 
-    // return () => clearInterval(interval);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -38,10 +39,10 @@ export function BaseData() {
       </div>
 
       <div className="w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <CardData value={Number(baseData.velocity)} type="km/h" />
-        <CardData value={Number(baseData.rpm)} type="rpm" />
-        <CardData value={Number(baseData.temperature)} type="ºC" />
-        <CardData value={Number(baseData.fuel)} type="/4" />
+        <CardData value={baseData.velocity} type="km/h" />
+        <CardData value={baseData.rpm} type="rpm" />
+        <CardData value={baseData.temperature} type="ºC" />
+        <CardData value={baseData.fuel} type="/4" />
       </div>
     </div>
   );
