@@ -34,7 +34,7 @@ export function UserLocationButton({
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      (_position) => {
         //const { latitude, longitude } = position.coords;
         const fakeUserLocation = {latitude: -22.358621, longitude: -49.023953}
         setCurrentLocation(fakeUserLocation);

@@ -27,8 +27,12 @@ import {
   buildChartConfig,
   chartConfigs,
 } from "@/shared/constants/chart-config";
+import { Loading } from "@/app/components/loading";
 import { chartOptions } from "@/shared/constants/options/chart-options";
-import { normalizeTimestamp } from "@/shared/utils/normalize-timestamp";
+import {
+  normalizeTimestamp,
+  type NormalizedChartData,
+} from "@/shared/utils/normalize-timestamp";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
@@ -44,11 +48,8 @@ function formatSecondsToTime(value: unknown): string {
 
 export function Charts() {
   const [isLoading, setIsLoading] = useState(false);
-  const [timeRange, setTimeRange] = useState("90d");
   const [chartValue, setChartValue] = useState<string>("VelXTemp");
-  const [dataChart, setDataChart] = useState<Record<string, string | number>[]>(
-    []
-  );
+  const [dataChart, setDataChart] = useState<NormalizedChartData[]>([]);
 
   const date = useMemo(() => new Date(), []);
   const config = chartValue
@@ -73,7 +74,7 @@ export function Charts() {
         data as (BaseDataDTO | TiresDataDTO)[],
         [...config.yKeys],
         date
-      ) as unknown as Record<string, string | number>[];
+      );
       setDataChart(normalized);
     } catch (error) {
       console.error(error);
@@ -150,7 +151,11 @@ export function Charts() {
             </div>
           </CardHeader>
           <CardContent className="relative px-2 pt-4 sm:px-6 sm:pt-6">
-         
+            {isLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/80">
+                <Loading className="h-8 w-8" />
+              </div>
+            )}
             <ChartContainer
               config={chartConfig}
               className="aspect-auto h-[250px] w-full"

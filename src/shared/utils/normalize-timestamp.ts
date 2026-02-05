@@ -1,11 +1,13 @@
 import type { BaseDataDTO } from "@/dtos/base-data-DTO";
 import type { TiresDataDTO } from "@/dtos/tires-data-DTO";
 
+export type NormalizedChartData = Record<string, number>;
+
 export function normalizeTimestamp(
   data: (BaseDataDTO | TiresDataDTO)[],
   params: string[],
   date: Date
-): Record<string, BaseDataDTO | TiresDataDTO>[] {
+): NormalizedChartData[] {
   const dayStart = new Date(date);
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date(date);
@@ -22,13 +24,13 @@ export function normalizeTimestamp(
 
   return filteredData.map((item) => {
     const ts = new Date(item.created_at).getTime();
-    const result = {
+    const result: NormalizedChartData = {
       created_at: Math.floor((ts - baseTimestamp) / 1000),
     };
 
     params.forEach((param) => {
-      result[param] =
-        param === "fuel" ? Number(item[param]) : Number(item[param]);
+      const value = item[param as keyof (BaseDataDTO | TiresDataDTO)];
+      result[param] = Number(value);
     });
 
     return result;
