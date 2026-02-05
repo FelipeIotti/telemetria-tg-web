@@ -1,8 +1,11 @@
-export const normalizeTimestamp = (
-  data: any[],
+import type { BaseDataDTO } from "@/dtos/base-data-DTO";
+import type { TiresDataDTO } from "@/dtos/tires-data-DTO";
+
+export function normalizeTimestamp(
+  data: (BaseDataDTO | TiresDataDTO)[],
   params: string[],
   date: Date
-): Record<string, any>[] => {
+): Record<string, BaseDataDTO | TiresDataDTO>[] {
   const dayStart = new Date(date);
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date(date);
@@ -19,7 +22,7 @@ export const normalizeTimestamp = (
 
   return filteredData.map((item) => {
     const ts = new Date(item.created_at).getTime();
-    const result: any = {
+    const result = {
       created_at: Math.floor((ts - baseTimestamp) / 1000),
     };
 
@@ -30,4 +33,4 @@ export const normalizeTimestamp = (
 
     return result;
   });
-};
+}
