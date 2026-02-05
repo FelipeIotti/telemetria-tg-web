@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 
 export function MapPage() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [baseData, setBaseData] = useState<GpsDTO[]>([]);
 
   const [detailsData, setDetailsData] = useState<GpsDetailsDataDTO>({
