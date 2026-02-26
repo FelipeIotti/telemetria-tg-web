@@ -38,6 +38,29 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 export const description = "Gráficos de telemetria";
 
+const periodOptions = [
+  { label: "Última hora", value: "1h" },
+  { label: "Última semana", value: "7d" },
+  { label: "Último mês", value: "30d" },
+  { label: "Todo período", value: "all" },
+] as const;
+
+function filterDataByPeriod<T extends { created_at: Date | string }>(
+  data: T[],
+  period: string
+): T[] {
+  if (period === "all") return data;
+  const now = Date.now();
+  const ms =
+    period === "1h"
+      ? 60 * 60 * 1000
+      : period === "7d"
+        ? 7 * 24 * 60 * 60 * 1000
+        : 30 * 24 * 60 * 60 * 1000;
+  const since = now - ms;
+  return data.filter((item) => new Date(item.created_at).getTime() >= since);
+}
+
 function formatSecondsToTime(value: unknown): string {
   const sec = Number(value);
   if (Number.isNaN(sec) || sec < 0) return "0:00";
@@ -49,9 +72,8 @@ function formatSecondsToTime(value: unknown): string {
 export function Charts() {
   const [isLoading, setIsLoading] = useState(false);
   const [chartValue, setChartValue] = useState<string>("VelXTemp");
+  const [period, setPeriod] = useState<string>("all");
   const [dataChart, setDataChart] = useState<NormalizedChartData[]>([]);
-
-  const date = useMemo(() => new Date(), []);
   const config = chartValue
     ? (chartConfigs as Record<
         string,
@@ -70,10 +92,16 @@ export function Charts() {
     setIsLoading(true);
     try {
       const { data } = await api.get(config.endpoint);
+      const raw = data as (BaseDataDTO | TiresDataDTO)[];
+      const filtered =
+        period === "all"
+          ? raw
+          : filterDataByPeriod(raw, period);
       const normalized = normalizeTimestamp(
-        data as (BaseDataDTO | TiresDataDTO)[],
+        filtered,
         [...config.yKeys],
-        date
+        new Date(),
+        { skipDateFilter: true }
       );
       setDataChart(normalized);
     } catch (error) {
@@ -81,7 +109,7 @@ export function Charts() {
     } finally {
       setIsLoading(false);
     }
-  }, [chartValue, config, date]);
+  }, [chartValue, config, period]);
 
   useEffect(() => {
     loadChartData();
@@ -129,7 +157,7 @@ export function Charts() {
                   ))}
                 </SelectContent>
               </Select>
-              {/* <Select value={timeRange} onValueChange={setTimeRange}>
+              <Select value={period} onValueChange={setPeriod}>
                 <SelectTrigger
                   className="w-[160px] rounded-lg"
                   aria-label="Período"
@@ -137,17 +165,17 @@ export function Charts() {
                   <SelectValue placeholder="Período" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="90d" className="rounded-lg">
-                    Últimos 3 meses
-                  </SelectItem>
-                  <SelectItem value="30d" className="rounded-lg">
-                    Últimos 30 dias
-                  </SelectItem>
-                  <SelectItem value="7d" className="rounded-lg">
-                    Últimos 7 dias
-                  </SelectItem>
+                  {periodOptions.map((opt) => (
+                    <SelectItem
+                      key={opt.value}
+                      value={opt.value}
+                      className="rounded-lg"
+                    >
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
-              </Select> */}
+              </Select>
             </div>
           </CardHeader>
           <CardContent className="relative px-2 pt-4 sm:px-6 sm:pt-6">
