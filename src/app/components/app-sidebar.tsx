@@ -18,7 +18,7 @@ const items = [
     icon: Database,
   },
   {
-    title: "Peneus",
+    title: "Pneus",
     url: "/tires",
     icon: CircleDot,
   },
@@ -32,11 +32,7 @@ const items = [
     url: "/map",
     icon: Map,
   },
-  // {
-  //   title: "Settings",
-  //   url: "#",
-  //   icon: Settings,
-  // },
+ 
 ];
 
 export function AppSidebar() {

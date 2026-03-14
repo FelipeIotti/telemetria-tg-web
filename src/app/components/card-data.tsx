@@ -1,10 +1,12 @@
+import { memo } from "react";
+
 interface CardDataProps {
   value?: number;
   type: string;
   tireType?: string;
 }
 
-export function CardData({ value, type, tireType }: CardDataProps) {
+export const CardData = memo(function CardData({ value, type, tireType }: CardDataProps) {
   return (
     <div className="flex w-full h-full items-center justify-center px-6 py-10 border border-gray-200 rounded-lg relative shadow">
       <p className="font-bold text-primary text-4xl">
@@ -20,4 +22,4 @@ export function CardData({ value, type, tireType }: CardDataProps) {
       )}
     </div>
   );
-}
+});

@@ -1,13 +1,9 @@
 import type { GpsDetailsDataDTO } from "@/dtos/details-gps-data-DTO";
 import type { GpsDTO } from "@/dtos/gps-DTO";
-import type { Dispatch, SetStateAction } from "react";
 import { formatTime } from "./format-time";
 import { haversineDistance } from "./haversine-distance";
 
-export function calculateDetailsData(
-  data: GpsDTO[],
-  setDetailsData: Dispatch<SetStateAction<GpsDetailsDataDTO>>
-) {
+export function calculateDetailsData(data: GpsDTO[]): GpsDetailsDataDTO {
   const totalDistance = data.reduce((acc: number, point: GpsDTO, i: number) => {
     if (i === 0) return 0;
     const prev = data[i - 1];
@@ -53,10 +49,10 @@ export function calculateDetailsData(
     }
   }
 
-  setDetailsData({
+  return {
     averageSpeed: Number(avgSpeed.toFixed(1)),
     distance: Number(totalDistance.toFixed(2)),
     time: formatTime(timeInSeconds),
     turns: laps,
-  });
+  };
 }

@@ -11,7 +11,7 @@ export function ReloadButton({
   ...rest
 }: OrientationButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const baseStyle = `bg-white rounded p-2 shadow cursor-pointer`;
+  const baseStyle = `bg-white rounded p-2 shadow cursor-pointer left-0 bottom-0`;
 
   async function loadData() {
     try {

@@ -11,7 +11,7 @@ export function DetailsDataButton({ data }: DetailsDataButton) {
   return (
     <div
       onClick={() => setShow(!show)}
-      className="bg-white rounded p-2 shadow cursor-pointer"
+      className="bg-white rounded p-2 shadow cursor-pointer left-0 top-0"
     >
       {!show ? (
         <Activity />

@@ -34,22 +34,24 @@ export function UserLocationButton({
     }
 
     navigator.geolocation.getCurrentPosition(
-      (_position) => {
-        //const { latitude, longitude } = position.coords;
-        const fakeUserLocation = {latitude: -22.358621, longitude: -49.023953}
-        setCurrentLocation(fakeUserLocation);
+      (location) => {
+        
+        const{coords}=location
+        const userLocation = {latitude: coords.latitude, longitude: coords.longitude}
+
+        setCurrentLocation(userLocation);
 
         if (mapRef.current) {
-          mapRef.current.flyTo({ center: [fakeUserLocation.longitude, fakeUserLocation.latitude], zoom: 14 });
+          mapRef.current.flyTo({ center: [userLocation.longitude, userLocation.latitude], zoom: 14 });
 
           if (!userMarkerRef.current) {
             userMarkerRef.current = new mapboxgl.Marker({
               element: createCustomMarker(),
             })
-              .setLngLat([fakeUserLocation.longitude, fakeUserLocation.latitude])
+              .setLngLat([userLocation.longitude, userLocation.latitude])
               .addTo(mapRef.current);
           } else {
-            userMarkerRef.current.setLngLat([fakeUserLocation.longitude, fakeUserLocation.latitude]);
+            userMarkerRef.current.setLngLat([userLocation.longitude, userLocation.latitude]);
           }
         }
       },

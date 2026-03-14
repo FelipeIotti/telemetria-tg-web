@@ -4,6 +4,11 @@ export const chartConfigs = {
     yKeys: ["velocity"],
     endpoint: "/base-data",
   },
+  FuelXTemp: {
+    xKey: "created_at",
+    yKeys: ["fuel"],
+    endpoint: "/base-data",
+  },
   TempCVTXTemp: {
     xKey: "created_at",
     yKeys: ["temperature"],
@@ -18,11 +23,6 @@ export const chartConfigs = {
     xKey: "created_at",
     yKeys: ["temp_tire_fr", "temp_tire_fl", "temp_tire_br", "temp_tire_bl"],
     endpoint: "/tires",
-  },
-  FuelXTemp: {
-    xKey: "created_at",
-    yKeys: ["fuel"],
-    endpoint: "/base-data",
   },
 } as const;
 

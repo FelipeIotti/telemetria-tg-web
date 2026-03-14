@@ -1,1 +1,1 @@
-export type TiresTypeDTO = "ºC" | "Psi";
+export * from "../types/tires-type-DTO";
