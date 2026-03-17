@@ -39,30 +39,14 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 const POLLING_INTERVAL = 5000;
 
 const periodOptions = [
+  { label: "Últimos 15 minutos", value: "15m" },
+  { label: "Últimos 30 minutos", value: "30m" },
   { label: "Última hora", value: "1h" },
-  { label: "Último dia", value: "1d" },
-  { label: "Última semana", value: "7d" },
-  { label: "Último mês", value: "30d" },
+  { label: "Últimas 6 horas", value: "6h" },
   { label: "Todo período", value: "all" },
 ] as const;
 
-const PERIOD_MS: Record<string, number> = {
-  "1h": 60 * 60 * 1000,
-  "1d": 24 * 60 * 60 * 1000,
-  "7d": 7 * 24 * 60 * 60 * 1000,
-  "30d": 30 * 24 * 60 * 60 * 1000,
-};
-
-function filterDataByPeriod<T extends { created_at: Date | string }>(
-  data: T[],
-  period: string
-): T[] {
-  if (period === "all") return data;
-  const since = Date.now() - (PERIOD_MS[period] ?? 0);
-  return data.filter((item) => new Date(item.created_at).getTime() >= since);
-}
-
-function formatSecondsByPeriod(value: unknown, period: string): string {
+function formatSecondsByPeriod(value: unknown): string {
   const totalSeconds = Number(value);
   if (Number.isNaN(totalSeconds) || totalSeconds < 0) return "0s";
 
@@ -70,30 +54,27 @@ function formatSecondsByPeriod(value: unknown, period: string): string {
   const secondsInHour = 60 * 60;
   const secondsInDay = 24 * 60 * 60;
 
-  switch (period) {
-    case "1h": {
-      const mins = Math.floor(totalSeconds / secondsInMinute);
-      return `${mins}m`;
-    }
-    case "1d": {
-      const hours = Math.floor(totalSeconds / secondsInHour);
-      return `${hours}h`;
-    }
-    case "7d":
-    case "30d":
-    case "all": {
-      const days = Math.floor(totalSeconds / secondsInDay);
-      const remainingHours = Math.floor((totalSeconds % secondsInDay) / secondsInHour);
-      if (days > 0) {
-        return `${days}d ${remainingHours}h`;
-      }
-      return `${remainingHours}h`;
-    }
-    default: {
-      const mins = Math.floor(totalSeconds / secondsInMinute);
-      return `${mins}m`;
-    }
+  if (totalSeconds < secondsInMinute) {
+    return `${Math.floor(totalSeconds)}s`;
   }
+
+  if (totalSeconds < secondsInHour) {
+    const mins = Math.floor(totalSeconds / secondsInMinute);
+    return `${mins}m`;
+  }
+
+  if (totalSeconds < secondsInDay) {
+    const hours = Math.floor(totalSeconds / secondsInHour);
+    const mins = Math.floor((totalSeconds % secondsInHour) / secondsInMinute);
+    return `${hours}h ${mins}m`;
+  }
+
+  const days = Math.floor(totalSeconds / secondsInDay);
+  const remainingHours = Math.floor((totalSeconds % secondsInDay) / secondsInHour);
+  if (days > 0) {
+    return `${days}d ${remainingHours}h`;
+  }
+  return `${remainingHours}h`;
 }
 
 interface ChartDataState {
@@ -105,12 +86,14 @@ function ChartCard({
   configKey,
   config,
   period,
-  tick,
+  autoRefresh,
+  refreshTrigger,
 }: {
   configKey: string;
   config: (typeof chartConfigs)[keyof typeof chartConfigs];
   period: string;
-  tick: number;
+  autoRefresh: boolean;
+  refreshTrigger: number;
 }) {
   const [state, setState] = useState<ChartDataState>({
     data: [],
@@ -131,13 +114,13 @@ function ChartCard({
       console.log(`[Chart:${configKey}] Request SUCCESS | Status: ${status} | Time: ${fetchTime.toFixed(2)}ms | Records: ${data.length}`);
 
       const raw = data as (BaseDataDTO | TiresDataDTO)[];
-      const filtered = period === "all" ? raw : filterDataByPeriod(raw, period);
-      const normalized = normalizeTimestamp(filtered, [...config.yKeys], new Date(), {
-        skipDateFilter: true,
+      const normalized = normalizeTimestamp(raw, [...config.yKeys], new Date(), {
+        period: period,
+        fillGaps: true,
       });
 
       setState({ data: normalized, isLoading: false });
-      console.log(`[Chart:${configKey}] Processed | Filtered: ${filtered.length} | Normalized: ${normalized.length}`);
+      console.log(`[Chart:${configKey}] Processed | Normalized: ${normalized.length}`);
     } catch (error) {
       const errorTime = performance.now() - startTime;
       console.error(`[Chart:${configKey}] Request ERROR | Time: ${errorTime.toFixed(2)}ms`, error);
@@ -147,7 +130,7 @@ function ChartCard({
 
   useEffect(() => {
     loadData();
-  }, [loadData, tick]);
+  }, [loadData, refreshTrigger]);
 
   const chartConfig = useMemo(
     () => buildChartConfig(config.yKeys),
@@ -160,9 +143,21 @@ function ChartCard({
   );
 
   const xAxisFormatter = useMemo(
-    () => (value: unknown) => formatSecondsByPeriod(value, period),
-    [period]
+    () => (value: unknown) => formatSecondsByPeriod(value),
+    []
   );
+
+  const xAxisDomain = useMemo(() => {
+    if (period === "all") return undefined;
+    const periodMs: Record<string, number> = {
+      "15m": 15 * 60,
+      "30m": 30 * 60,
+      "1h": 60 * 60,
+      "6h": 6 * 60 * 60,
+    };
+    const maxSeconds = periodMs[period];
+    return [0, maxSeconds] as [number, number];
+  }, [period]);
 
   return (
     <Card className="pt-0">
@@ -173,7 +168,17 @@ function ChartCard({
             {config.yKeys.map((k) => chartConfig[k]?.label ?? k).join(", ")} ao longo do tempo
           </CardDescription>
         </div>
-        {state.isLoading && <Loading className="h-5 w-5" />}
+        <div className="flex items-center gap-2">
+          {state.isLoading && <Loading className="h-5 w-5" />}
+          {!autoRefresh && !state.isLoading && (
+            <button
+              onClick={loadData}
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Atualizar
+            </button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
@@ -192,8 +197,10 @@ function ChartCard({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              minTickGap={32}
+              minTickGap={60}
+              domain={xAxisDomain}
               tickFormatter={xAxisFormatter}
+              type="number"
             />
             <YAxis tickLine={false} axisLine={false} tickMargin={8} />
             <ChartTooltip
@@ -227,14 +234,21 @@ function ChartCard({
 
 export function Charts() {
   const [period, setPeriod] = useState<string>("all");
-  const [tick, setTick] = useState(0);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
+    if (!autoRefresh) return;
+    
     const interval = setInterval(() => {
-      setTick((prev) => prev + 1);
+      setRefreshKey((prev) => prev + 1);
     }, POLLING_INTERVAL);
     return () => clearInterval(interval);
-  }, []);
+  }, [autoRefresh]);
+
+  const handleToggleAutoRefresh = () => {
+    setAutoRefresh((prev) => !prev);
+  };
 
   const configKeys = useMemo(
     () => Object.keys(chartConfigs) as (keyof typeof chartConfigs)[],
@@ -245,18 +259,33 @@ export function Charts() {
     <div className="flex w-full flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Gráficos</h1>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-[160px] rounded-lg" aria-label="Período">
-            <SelectValue placeholder="Período" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            {periodOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="rounded-lg">
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={handleToggleAutoRefresh}
+              className="w-4 h-4"
+            />
+            <span className="text-sm">Atualização automática</span>
+          </label>
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-[160px] rounded-lg" aria-label="Período">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {periodOptions.map((opt) => (
+                <SelectItem 
+                  key={opt.value} 
+                  value={opt.value} 
+                  className="rounded-lg"
+                >
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid gap-6">
@@ -268,7 +297,8 @@ export function Charts() {
               configKey={configKey}
               config={config}
               period={period}
-              tick={tick}
+              autoRefresh={autoRefresh}
+              refreshTrigger={autoRefresh ? refreshKey : 0}
             />
           );
         })}

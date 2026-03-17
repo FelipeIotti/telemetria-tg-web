@@ -196,6 +196,7 @@ export function Map({ data, detailsData, handleLoadData }: MapProps) {
       mapRef.current?.remove();
       mapRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

@@ -48,6 +48,7 @@ export const telemetryService = {
   },
 
   async clearAllData(): Promise<void> {
+    console.log("-1")
     await api.delete("/clear-all");
   },
 

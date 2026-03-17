@@ -4,37 +4,46 @@ import type { TiresDataDTO } from "@/dtos/tires-data-DTO";
 export type NormalizedChartData = Record<string, number>;
 
 export type NormalizeTimestampOptions = {
-  /** Se true, não filtra por dia; normaliza todos os itens recebidos (útil para "última hora/semana/mês/todo período") */
-  skipDateFilter?: boolean;
+  period?: string;
+  fillGaps?: boolean;
+};
+
+const PERIOD_MS: Record<string, number> = {
+  "15m": 15 * 60 * 1000,
+  "30m": 30 * 60 * 1000,
+  "1h": 60 * 60 * 1000,
+  "6h": 6 * 60 * 60 * 1000,
+  "1d": 24 * 60 * 60 * 1000,
+  "7d": 7 * 24 * 60 * 60 * 1000,
+  "30d": 30 * 24 * 60 * 60 * 1000,
 };
 
 export function normalizeTimestamp(
   data: (BaseDataDTO | TiresDataDTO)[],
   params: string[],
-  date: Date,
+  _date: Date,
   options?: NormalizeTimestampOptions
 ): NormalizedChartData[] {
-  const filteredData = options?.skipDateFilter
-    ? data
-    : (() => {
-        const dayStart = new Date(date);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(date);
-        dayEnd.setHours(23, 59, 59, 999);
-        return data.filter((item) => {
-          const ts = new Date(item.created_at).getTime();
-          return ts >= dayStart.getTime() && ts <= dayEnd.getTime();
-        });
-      })();
+  let filteredData = data;
+
+  if (options?.period && options.period !== "all") {
+    const since = Date.now() - (PERIOD_MS[options.period] ?? 0);
+    filteredData = data.filter((item) => new Date(item.created_at).getTime() >= since);
+  }
 
   if (filteredData.length === 0) return [];
 
-  const baseTimestamp = new Date(filteredData[0].created_at).getTime();
+  const now = Date.now();
+  const minTime = options?.period && options.period !== "all" 
+    ? now - (PERIOD_MS[options.period] ?? 0)
+    : new Date(filteredData[0].created_at).getTime();
 
-  return filteredData.map((item) => {
+  const baseTime = minTime;
+
+  const normalized = filteredData.map((item) => {
     const ts = new Date(item.created_at).getTime();
     const result: NormalizedChartData = {
-      created_at: Math.floor((ts - baseTimestamp) / 1000),
+      created_at: Math.floor((ts - baseTime) / 1000),
     };
 
     params.forEach((param) => {
@@ -44,4 +53,35 @@ export function normalizeTimestamp(
 
     return result;
   });
+
+  if (options?.fillGaps && options.period && options.period !== "all") {
+    return fillGapsWithZeros(normalized, params, options.period);
+  }
+
+  return normalized;
+}
+
+function fillGapsWithZeros(data: NormalizedChartData[], params: string[], period: string): NormalizedChartData[] {
+  const periodSeconds = Math.floor((PERIOD_MS[period] ?? 0) / 1000);
+  
+  const dataMap = new Map<number, NormalizedChartData>();
+  data.forEach((item) => {
+    dataMap.set(item.created_at, item);
+  });
+
+  const filled: NormalizedChartData[] = [];
+
+  for (let t = 0; t <= periodSeconds; t++) {
+    if (dataMap.has(t)) {
+      filled.push(dataMap.get(t)!);
+    } else {
+      const gapEntry: NormalizedChartData = { created_at: t };
+      params.forEach((param) => {
+        gapEntry[param] = 0;
+      });
+      filled.push(gapEntry);
+    }
+  }
+
+  return filled;
 }

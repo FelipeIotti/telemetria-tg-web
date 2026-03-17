@@ -1,20 +1,27 @@
 import { telemetryService } from "@/services/telemetry-service";
 import { useState } from "react";
+import axios from "axios";
 
 export function Settings() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   const handleGenerateData = async (erase: boolean) => {
     setIsGenerating(true);
-    setMessage("");
+    setMessage(null);
 
     try {
       await telemetryService.mockData({ erase });
-      setMessage(erase ? "Dados limpos e novos dados gerados!" : "Novos dados gerados!");
+      setMessage({ 
+        text: erase ? "Dados limpos e novos dados gerados!" : "Novos dados gerados!", 
+        type: "success" 
+      });
     } catch (error) {
-      setMessage("Erro ao gerar dados");
+      const errorMessage = axios.isAxiosError(error) 
+        ? `Erro ao gerar dados: ${error.message}` 
+        : "Erro ao gerar dados";
+      setMessage({ text: errorMessage, type: "error" });
       console.error(error);
     } finally {
       setIsGenerating(false);
@@ -23,24 +30,45 @@ export function Settings() {
 
   const handleClearData = async (type: "base-data" | "tires" | "gps" | "all") => {
     setIsClearing(true);
-    setMessage("");
+    setMessage(null);
+
+    const typeLabels: Record<string, string> = {
+      "base-data": "Dados Base",
+      "tires": "Pneus",
+      "gps": "GPS",
+      "all": "Todos os dados",
+    };
 
     try {
       if (type === "base-data") {
         await telemetryService.clearBaseData();
-        setMessage("Dados de base-data limpos com sucesso!");
       } else if (type === "tires") {
         await telemetryService.clearTiresData();
-        setMessage("Dados de tires limpos com sucesso!");
       } else if (type === "gps") {
         await telemetryService.clearGpsData();
-        setMessage("Dados de gps limpos com sucesso!");
       } else if (type === "all") {
         await telemetryService.clearAllData();
-        setMessage("Todos os dados limpos com sucesso!");
       }
+      setMessage({ 
+        text: `${typeLabels[type]} limpos com sucesso!`, 
+        type: "success" 
+      });
     } catch (error) {
-      setMessage(`Erro ao limpar dados de ${type}`);
+      if (axios.isAxiosError(error)) {
+        if (!error.response) {
+          setMessage({ 
+            text: `Erro de conexão: O servidor pode estar indisponível ou a rota /${type === "all" ? "clear-all" : type} não existe no backend.`, 
+            type: "error" 
+          });
+        } else {
+          setMessage({ 
+            text: `Erro ao limpar ${typeLabels[type].toLowerCase()}: ${error.response.status} - ${error.response.statusText}`, 
+            type: "error" 
+          });
+        }
+      } else {
+        setMessage({ text: `Erro ao limpar ${typeLabels[type].toLowerCase()}`, type: "error" });
+      }
       console.error(error);
     } finally {
       setIsClearing(false);
@@ -118,7 +146,9 @@ export function Settings() {
       </div>
 
       {message && (
-        <p className="text-green-600 font-medium">{message}</p>
+        <p className={`font-medium ${message.type === "success" ? "text-green-600" : "text-red-600"}`}>
+          {message.text}
+        </p>
       )}
     </div>
   );
