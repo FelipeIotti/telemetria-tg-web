@@ -63,6 +63,13 @@ function updateMarkerPosition(
       .setLngLat([position.longitude, position.latitude])
       .addTo(map);
   }
+
+  // Keep the marker element in sync with the requested icon.
+  // Mapbox reuses the element reference, so if we only move lng/lat,
+  // we might never update the SVG (e.g. if icon choice changes).
+  marker.getElement().className = `w-6 h-6 ${colorClass}`;
+  marker.getElement().innerHTML = iconSvg;
+
   marker.setLngLat([position.longitude, position.latitude]);
   return marker;
 }

@@ -25,6 +25,7 @@ export function normalizeTimestamp(
   options?: NormalizeTimestampOptions
 ): NormalizedChartData[] {
   let filteredData = data;
+  const isAllPeriod = options?.period === "all";
 
   if (options?.period && options.period !== "all") {
     const since = Date.now() - (PERIOD_MS[options.period] ?? 0);
@@ -34,16 +35,19 @@ export function normalizeTimestamp(
   if (filteredData.length === 0) return [];
 
   const now = Date.now();
-  const minTime = options?.period && options.period !== "all" 
-    ? now - (PERIOD_MS[options.period] ?? 0)
-    : new Date(filteredData[0].created_at).getTime();
-
-  const baseTime = minTime;
+  const baseTime = !isAllPeriod
+    ? // For relative charts (15m/30m/1h/6h), normalize to a 0..N seconds domain.
+      options?.period
+      ? now - (PERIOD_MS[options.period] ?? 0)
+      : new Date(filteredData[0].created_at).getTime()
+    : 0;
 
   const normalized = filteredData.map((item) => {
     const ts = new Date(item.created_at).getTime();
     const result: NormalizedChartData = {
-      created_at: Math.floor((ts - baseTime) / 1000),
+      created_at: Math.floor(
+        isAllPeriod ? ts / 1000 : (ts - baseTime) / 1000
+      ),
     };
 
     params.forEach((param) => {

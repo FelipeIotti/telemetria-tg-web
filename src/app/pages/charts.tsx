@@ -77,6 +77,26 @@ function formatSecondsByPeriod(value: unknown): string {
   return `${remainingHours}h`;
 }
 
+function formatUnixSeconds(value: unknown, withDate: boolean): string {
+  const unixSeconds = Number(value);
+  if (!Number.isFinite(unixSeconds)) return "";
+  const date = new Date(unixSeconds * 1000);
+  if (Number.isNaN(date.getTime())) return "";
+  if (!withDate) {
+    return date.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 interface ChartDataState {
   data: NormalizedChartData[];
   isLoading: boolean;
@@ -104,14 +124,24 @@ function ChartCard({
   const loadData = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoading: true }));
     requestCountRef.current += 1;
+    const currentRequest = requestCountRef.current;
 
     const startTime = performance.now();
-    console.log(`[Chart:${configKey}] Request #${requestCountRef.current} START | Endpoint: ${config.endpoint} | Period: ${period}`);
+    if (import.meta.env.DEV) {
+      console.log(
+        `[Chart:${configKey}] Request #${currentRequest} START | Endpoint: ${config.endpoint} | Period: ${period}`
+      );
+    }
 
     try {
       const { data, status } = await api.get(config.endpoint);
       const fetchTime = performance.now() - startTime;
-      console.log(`[Chart:${configKey}] Request SUCCESS | Status: ${status} | Time: ${fetchTime.toFixed(2)}ms | Records: ${data.length}`);
+      if (currentRequest !== requestCountRef.current) return;
+      if (import.meta.env.DEV) {
+        console.log(
+          `[Chart:${configKey}] Request SUCCESS | Status: ${status} | Time: ${fetchTime.toFixed(2)}ms | Records: ${data.length}`
+        );
+      }
 
       const raw = data as (BaseDataDTO | TiresDataDTO)[];
       const normalized = normalizeTimestamp(raw, [...config.yKeys], new Date(), {
@@ -120,8 +150,11 @@ function ChartCard({
       });
 
       setState({ data: normalized, isLoading: false });
-      console.log(`[Chart:${configKey}] Processed | Normalized: ${normalized.length}`);
+      if (import.meta.env.DEV) {
+        console.log(`[Chart:${configKey}] Processed | Normalized: ${normalized.length}`);
+      }
     } catch (error) {
+      if (currentRequest !== requestCountRef.current) return;
       const errorTime = performance.now() - startTime;
       console.error(`[Chart:${configKey}] Request ERROR | Time: ${errorTime.toFixed(2)}ms`, error);
       setState((prev) => ({ ...prev, isLoading: false }));
@@ -142,11 +175,6 @@ function ChartCard({
     [configKey]
   );
 
-  const xAxisFormatter = useMemo(
-    () => (value: unknown) => formatSecondsByPeriod(value),
-    []
-  );
-
   const xAxisDomain = useMemo(() => {
     if (period === "all") return undefined;
     const periodMs: Record<string, number> = {
@@ -158,6 +186,35 @@ function ChartCard({
     const maxSeconds = periodMs[period];
     return [0, maxSeconds] as [number, number];
   }, [period]);
+
+  const withDateForAll = useMemo(() => {
+    if (period !== "all" || state.data.length === 0) return true;
+
+    let minMs = Number.POSITIVE_INFINITY;
+    let maxMs = Number.NEGATIVE_INFINITY;
+    for (const point of state.data) {
+      const ms = point.created_at * 1000;
+      if (ms < minMs) minMs = ms;
+      if (ms > maxMs) maxMs = ms;
+    }
+
+    const minDate = new Date(minMs);
+    const maxDate = new Date(maxMs);
+    return minDate.toDateString() !== maxDate.toDateString();
+  }, [period, state.data]);
+
+  const xAxisFormatter = useMemo(
+    () => {
+      if (period === "all") {
+        // When showing "all", `created_at` is the absolute unix timestamp (seconds).
+        return (value: unknown) => formatUnixSeconds(value, withDateForAll);
+      }
+
+      // For relative ranges, `created_at` is seconds since the chart baseline (0..N).
+      return (value: unknown) => formatSecondsByPeriod(value);
+    },
+    [period, withDateForAll]
+  );
 
   return (
     <Card className="pt-0">
@@ -208,8 +265,8 @@ function ChartCard({
               content={
                 <ChartTooltipContent
                   labelFormatter={(_, payload) => {
-                    const createdAt = payload?.[0]?.payload?.created_at ?? payload?.[0]?.payload;
-                    return xAxisFormatter(createdAt);
+                    const createdAt = payload?.[0]?.payload?.created_at;
+                    return createdAt === undefined ? "" : xAxisFormatter(createdAt);
                   }}
                   indicator="dot"
                 />

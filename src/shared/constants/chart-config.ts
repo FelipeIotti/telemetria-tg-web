@@ -4,14 +4,14 @@ export const chartConfigs = {
     yKeys: ["velocity"],
     endpoint: "/base-data",
   },
-  FuelXTemp: {
-    xKey: "created_at",
-    yKeys: ["fuel"],
-    endpoint: "/base-data",
-  },
   TempCVTXTemp: {
     xKey: "created_at",
     yKeys: ["temperature"],
+    endpoint: "/base-data",
+  },
+  VelXRpm: {
+    xKey: "created_at",
+    yKeys: ["velocity", "rpm"],
     endpoint: "/base-data",
   },
   PressTPMSXTemp: {
@@ -28,6 +28,7 @@ export const chartConfigs = {
 
 export const chartMetricLabels: Record<string, string> = {
   velocity: "Velocidade",
+  rpm: "RPM",
   temperature: "Temperatura CVT",
   fuel: "Combustível",
   press_tire_fr: "Pressão FL",
